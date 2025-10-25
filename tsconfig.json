@@ -11,7 +11,7 @@
 
     // Library Support
     "lib": ["esnext"],
-    "types": ["node"],
+    "types": ["node", "jest"],
 
     // Output Files
     "sourceMap": true,
