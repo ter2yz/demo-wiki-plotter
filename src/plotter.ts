@@ -113,6 +113,15 @@ export async function saveChart(
   filename: string
 ): Promise<void> {
   const fs = await import("fs");
-  fs.writeFileSync(`output/${filename}`, buffer);
-  console.log(`✓ Chart saved to: ./output/${filename}`);
+
+  // Create output directory if it doesn't exist
+  const outputDir = "output";
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+    console.log(`✓ Created ${outputDir}/ directory`);
+  }
+
+  // Write the file
+  fs.writeFileSync(`${outputDir}/${filename}`, buffer);
+  console.log(`✓ Chart saved to: ./${outputDir}/${filename}`);
 }
