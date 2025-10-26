@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 
 import type { NumericColumn, ParsedTable } from "./types.js";
+import { hasLink, looksLikeDate, looksMeasurement } from "./utils/helpers.js";
 
 /**
  * Extracts all tables from HTML content
@@ -17,7 +18,7 @@ export function extractTables(html: string): ParsedTable[] {
     const headers: string[] = [];
     const rows: string[][] = [];
 
-    // Extract headers
+    // extract headers
     $(element)
       .find("thead tr th, tr:first-child th")
       .each((_, th) => {
@@ -33,14 +34,14 @@ export function extractTables(html: string): ParsedTable[] {
         });
     }
 
-    // Extract rows
+    // extract rows
     $(element)
       .find("tbody tr, tr")
       .each((_, tr) => {
         const row: string[] = [];
         const $tr = $(tr);
 
-        // Skip header rows
+        // skip header rows
         if ($tr.find("th").length > 0 && $tr.find("td").length === 0) {
           return;
         }
@@ -48,7 +49,7 @@ export function extractTables(html: string): ParsedTable[] {
         $tr.find("td").each((_, td) => {
           const $td = $(td);
 
-          // Check if this cell contains a link
+          // check if this cell contains a link
           const hasLink = $td.find("a").length > 0;
           if (hasLink) {
             row.push(`[LINK]${$td.text().trim()}`);
@@ -97,7 +98,7 @@ export function extractNumericValue(text: string): number | null {
     return null;
   }
 
-  // PRIORITY 1: Measurements
+  // step 1: Measurements
   if (looksMeasurement(text)) {
     const match = text.match(/(\d+\.?\d*)\s*[a-zA-Z]/);
     if (match) {
@@ -108,7 +109,7 @@ export function extractNumericValue(text: string): number | null {
     }
   }
 
-  // PRIORITY 2: Decimal numbers
+  // step 2: Decimal numbers
   const decimalMatch = text.match(/\b\d+\.\d+\b/);
   if (decimalMatch) {
     const num = parseFloat(decimalMatch[0]);
@@ -117,7 +118,7 @@ export function extractNumericValue(text: string): number | null {
     }
   }
 
-  // PRIORITY 3: Integer numbers (cautiously)
+  // step 3: Integer numbers (cautiously)
   const integerMatch = text.match(/\b(\d+)\b/);
   if (integerMatch) {
     const num = parseInt(integerMatch[1] ?? "", 10);
@@ -154,7 +155,7 @@ export function isNumericColumn(columnData: string[]): {
 
   const ratio = numericCount / columnData.length;
 
-  // Consider it numeric if at least 70% of cells contain numbers
+  // consider it numeric if at least 70% of cells contain numbers
   return {
     isNumeric: ratio >= 0.7,
     ratio,
@@ -176,7 +177,7 @@ export function findNumericColumn(table: ParsedTable): NumericColumn | null {
   let bestColumn: NumericColumn | null = null;
   let bestRatio = 0;
 
-  // Check each column
+  // check each column
   for (let colIndex = 0; colIndex < numColumns; colIndex++) {
     const columnData = table.rows.map((row) => row[colIndex] || "");
     const { isNumeric, ratio } = isNumericColumn(columnData);
@@ -186,7 +187,6 @@ export function findNumericColumn(table: ParsedTable): NumericColumn | null {
     );
 
     if (isNumeric && ratio > bestRatio) {
-      // Extract all numeric values
       const values: number[] = [];
       const rawValues: string[] = [];
 
@@ -240,41 +240,4 @@ export function parseWikipediaTable(html: string): NumericColumn | null {
   }
 
   throw new Error("No numeric columns found in any table");
-}
-
-/**
- * Helper functions
- */
-/**
- * Checks if a cell contains a link (marked during parsing)
- */
-function hasLink(text: string): boolean {
-  return text.startsWith("[LINK]");
-}
-
-/**
- * Checks if a string appears to be a date
- */
-function looksLikeDate(text: string): boolean {
-  const months =
-    /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\b/i;
-  const datePatterns = [
-    /\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4}/, // 20/05/1922 or 20-05-1922
-    /\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}/, // 1922-05-20
-    /\d{1,2}\s+\w+\s+\d{4}/, // 20 May 1922
-    /\w+\s+\d{1,2},?\s+\d{4}/, // May 20, 1922
-  ];
-
-  return (
-    months.test(text) || datePatterns.some((pattern) => pattern.test(text))
-  );
-}
-
-/**
- * Determines if a value looks like a measurement (height, distance, etc.)
- */
-function looksMeasurement(text: string): boolean {
-  const units =
-    /\b(m|meter|metre|cm|km|ft|foot|feet|inch|in|mile|yard|yd|kg|lb|pound|sec|min|hour)\b/i;
-  return units.test(text);
 }
