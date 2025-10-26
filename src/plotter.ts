@@ -39,13 +39,13 @@ export async function generateChart(
 
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-  // Create chart renderer
+  // create chart renderer
   const chartJSNodeCanvas = new ChartJSNodeCanvas({
     width: finalConfig.width,
     height: finalConfig.height,
   });
 
-  // Prepare data for Chart.js
+  // prepare data for Chart.js
   const labels = data.values.map((_, index) => (index + 1).toString());
 
   const chartConfig: ChartConfiguration = {
@@ -96,7 +96,7 @@ export async function generateChart(
     },
   };
 
-  // Render chart to buffer
+  // render chart to buffer
   const imageBuffer = await chartJSNodeCanvas.renderToBuffer(chartConfig);
 
   console.log("✓ Chart generated successfully");
@@ -114,14 +114,14 @@ export async function saveChart(
 ): Promise<void> {
   const fs = await import("fs");
 
-  // Create output directory if it doesn't exist
+  // create output directory if it doesn't exist
   const outputDir = "output";
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
     console.log(`✓ Created ${outputDir}/ directory`);
   }
 
-  // Write the file
+  // write the file
   fs.writeFileSync(`${outputDir}/${filename}`, buffer);
   console.log(`✓ Chart saved to: ./${outputDir}/${filename}`);
 }
