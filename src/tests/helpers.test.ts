@@ -3,7 +3,7 @@ import {
   hasLink,
   looksLikeDate,
   looksMeasurement,
-} from "./helpers.js";
+} from "../utils/helpers.js";
 
 describe("generateFilename", () => {
   it("should generate filename from simple URL", () => {
